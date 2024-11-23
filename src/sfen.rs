@@ -48,8 +48,12 @@ impl Sfen for Board {
             let mut empty_count = 0;
             for col in 0..COLS {
                 let index = rowcol2index(row, col);
-                if let Some(_) = board[index] {
-                    // todo
+                if let Some(piece) = board[index] {
+                    if empty_count > 0 {
+                        result += &format!("{}", empty_count);
+                    }
+                    result += &piece.sfen();
+                    empty_count = 0;
                 } else {
                     empty_count += 1;
                 }
@@ -146,5 +150,42 @@ mod tests {
         let result = board.sfen();
 
         assert_eq!(result, "3/3/3/3");
+    }
+
+    #[test]
+    pub fn test_board_of_white_pawns() {
+        let piece = Piece {
+            kind: PieceKind::Pawn,
+            color: Color::White,
+        };
+        let board = Board([Some(piece); BOARD_SIZE]);
+        let result = board.sfen();
+
+        assert_eq!(result, "ppp/ppp/ppp/ppp");
+    }
+
+    #[test]
+    pub fn test_board_of_some_white_pawns() {
+        let piece = Piece {
+            kind: PieceKind::Pawn,
+            color: Color::White,
+        };
+        let board = Board([
+            Some(piece),
+            None,
+            Some(piece),
+            Some(piece),
+            None,
+            Some(piece),
+            Some(piece),
+            None,
+            Some(piece),
+            Some(piece),
+            None,
+            Some(piece),
+        ]);
+        let result = board.sfen();
+
+        assert_eq!(result, "p1p/p1p/p1p/p1p");
     }
 }
