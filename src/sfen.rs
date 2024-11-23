@@ -42,30 +42,32 @@ impl Sfen for Piece {
 
 impl Sfen for Board {
     fn sfen(&self) -> String {
-        let board = self.0;
-        let mut result = String::new();
-        for row in 0..ROWS {
+        fn render_row(board: &Board, row: usize) -> String {
+            let mut line = String::new();
             let mut empty_count = 0;
             for col in 0..COLS {
                 let index = rowcol2index(row, col);
-                if let Some(piece) = board[index] {
+                if let Some(piece) = board.0[index] {
                     if empty_count > 0 {
-                        result += &format!("{}", empty_count);
+                        line += &empty_count.to_string();
                     }
-                    result += &piece.sfen();
+                    line += &piece.sfen();
                     empty_count = 0;
                 } else {
                     empty_count += 1;
                 }
             }
             if empty_count > 0 {
-                result += &format!("{}", empty_count);
+                line += &empty_count.to_string();
             }
-            if row < ROWS - 1 {
-                result += "/";
-            }
+            line
         }
-        result
+
+        let mut lines = vec![];
+        for row in 0..ROWS {
+            lines.push(render_row(self, row));
+        }
+        lines.join("/")
     }
 }
 
