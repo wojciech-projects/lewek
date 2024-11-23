@@ -165,27 +165,43 @@ mod tests {
     }
 
     #[test]
-    pub fn test_board_of_some_white_pawns() {
-        let piece = Piece {
+    pub fn test_board_with_many_gaps_and_pieces() {
+        let white_pawn = Piece {
             kind: PieceKind::Pawn,
             color: Color::White,
         };
+        let white_king = Piece {
+            kind: PieceKind::King,
+            color: Color::White,
+        };
+        let white_bishop = Piece {
+            kind: PieceKind::Bishop,
+            color: Color::White,
+        };
+        let black_rook = Piece {
+            kind: PieceKind::Rook,
+            color: Color::Black,
+        };
+        let black_tokin = Piece {
+            kind: PieceKind::PromotedPawn,
+            color: Color::Black,
+        };
         let board = Board([
-            Some(piece),
+            Some(white_pawn),
             None,
-            Some(piece),
-            Some(piece),
+            Some(white_king),
+            Some(white_bishop),
             None,
-            Some(piece),
-            Some(piece),
             None,
-            Some(piece),
-            Some(piece),
             None,
-            Some(piece),
+            None,
+            Some(black_rook),
+            None,
+            Some(black_tokin),
+            None,
         ]);
         let result = board.sfen();
 
-        assert_eq!(result, "p1p/p1p/p1p/p1p");
+        assert_eq!(result, "p1k/b2/2R/1P+1");
     }
 }
