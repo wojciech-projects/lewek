@@ -3,7 +3,7 @@
 /// It's not very efficient, but it encodes many invariants in the code.
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum PieceKind {
     Pawn,
     Bishop,
@@ -11,28 +11,36 @@ pub enum PieceKind {
     King,
     PromotedPawn,
 }
-
+#[derive(Debug, Copy, Clone)]
 pub enum HandPiece {
     Pawn,
     Bishop,
     Rook,
 }
 
+#[derive(Debug, Copy, Clone)]
 pub enum Color {
     Black,
     White,
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct Piece {
     pub kind: PieceKind,
     pub color: Color,
 }
 
-pub const BOARD_SIZE: usize = 12;
+pub const ROWS: usize = 4;
+pub const COLS: usize = 3;
+pub const BOARD_SIZE: usize = ROWS * COLS;
 
-pub type Board = [Piece; BOARD_SIZE];
+pub fn rowcol2index(row: usize, col: usize) -> usize {
+    COLS * row + col
+}
 
-pub type Hand = HashMap<HandPiece, usize>;
+pub struct Board(pub [Option<Piece>; BOARD_SIZE]);
+
+pub struct Hand(pub HashMap<HandPiece, usize>);
 
 pub struct Position {
     pub board: Board,
@@ -48,4 +56,32 @@ pub struct Position {
 pub struct GameState {
     pub current_position: Position,
     pub previous_positions: Vec<Position>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::rowcol2index;
+
+    #[test]
+    pub fn test_rowcol_conversion() {
+        let points: [(usize, usize); 12] = [
+            (0, 0),
+            (0, 1),
+            (0, 2),
+            (1, 0),
+            (1, 1),
+            (1, 2),
+            (2, 0),
+            (2, 1),
+            (2, 2),
+            (3, 0),
+            (3, 1),
+            (3, 2),
+        ];
+        let results: Vec<usize> = points
+            .iter()
+            .map(|(row, col)| rowcol2index(*row, *col))
+            .collect();
+        assert_eq!(results, (0..12).collect::<Vec<usize>>())
+    }
 }

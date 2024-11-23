@@ -40,6 +40,31 @@ impl Sfen for Piece {
     }
 }
 
+impl Sfen for Board {
+    fn sfen(&self) -> String {
+        let board = self.0;
+        let mut result = String::new();
+        for row in 0..ROWS {
+            let mut empty_count = 0;
+            for col in 0..COLS {
+                let index = rowcol2index(row, col);
+                if let Some(_) = board[index] {
+                    // todo
+                } else {
+                    empty_count += 1;
+                }
+            }
+            if empty_count > 0 {
+                result += &format!("{}", empty_count);
+            }
+            if row < ROWS - 1 {
+                result += "/";
+            }
+        }
+        result
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -113,5 +138,13 @@ mod tests {
             result,
             vec!["P", "B", "R", "K", "P+", "p", "b", "r", "k", "p+"],
         );
+    }
+
+    #[test]
+    pub fn test_empty_board() {
+        let board = Board([None; BOARD_SIZE]);
+        let result = board.sfen();
+
+        assert_eq!(result, "3/3/3/3");
     }
 }
