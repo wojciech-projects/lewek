@@ -17,6 +17,17 @@ impl Sfen for PieceKind {
     }
 }
 
+impl Sfen for HandPiece {
+    fn sfen(&self) -> String {
+        match *self {
+            HandPiece::Pawn => "p",
+            HandPiece::Bishop => "b",
+            HandPiece::Rook => "r",
+        }
+        .to_owned()
+    }
+}
+
 impl Sfen for Color {
     fn sfen(&self) -> String {
         match *self {
@@ -71,52 +82,43 @@ impl Sfen for Board {
     }
 }
 
+impl Sfen for Hand {
+    fn sfen(&self) -> String {
+        let mut result = String::new();
+
+        for piece in ALL_HAND_PIECES {
+            if let Some(&count) = self.0.get(&piece) {
+                if count > 1 {
+                    result += &format!("{}{}", piece.sfen(), count);
+                } else if count == 1 {
+                    result += &piece.sfen();
+                }
+            }
+        }
+        return result;
+    }
+}
+
+impl Sfen for Position {
+    fn sfen(&self) -> String {
+        let mut hands_sfen = String::new();
+        hands_sfen += &self.black_hand.sfen().to_ascii_uppercase();
+        hands_sfen += &self.white_hand.sfen();
+
+        format!(
+            "{} {} {}",
+            self.board.sfen(),
+            self.to_play.sfen(),
+            if hands_sfen == "" { "-" } else { &hands_sfen }
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::collections::HashMap;
 
-    const ALL_PIECES: [Piece; 10] = [
-        Piece {
-            kind: PieceKind::Pawn,
-            color: Color::Black,
-        },
-        Piece {
-            kind: PieceKind::Bishop,
-            color: Color::Black,
-        },
-        Piece {
-            kind: PieceKind::Rook,
-            color: Color::Black,
-        },
-        Piece {
-            kind: PieceKind::King,
-            color: Color::Black,
-        },
-        Piece {
-            kind: PieceKind::PromotedPawn,
-            color: Color::Black,
-        },
-        Piece {
-            kind: PieceKind::Pawn,
-            color: Color::White,
-        },
-        Piece {
-            kind: PieceKind::Bishop,
-            color: Color::White,
-        },
-        Piece {
-            kind: PieceKind::Rook,
-            color: Color::White,
-        },
-        Piece {
-            kind: PieceKind::King,
-            color: Color::White,
-        },
-        Piece {
-            kind: PieceKind::PromotedPawn,
-            color: Color::White,
-        },
-    ];
+    use super::*;
 
     #[test]
     pub fn test_piece_kind() {
@@ -147,6 +149,14 @@ mod tests {
     }
 
     #[test]
+    pub fn test_handpiece() {
+        let pieces = Vec::from(ALL_HAND_PIECES);
+        let result: Vec<String> = pieces.iter().map(|piece| piece.sfen()).collect();
+
+        assert_eq!(result, vec!["p", "b", "r"],);
+    }
+
+    #[test]
     pub fn test_empty_board() {
         let board = Board([None; BOARD_SIZE]);
         let result = board.sfen();
@@ -168,42 +178,139 @@ mod tests {
 
     #[test]
     pub fn test_board_with_many_gaps_and_pieces() {
-        let white_pawn = Piece {
-            kind: PieceKind::Pawn,
-            color: Color::White,
-        };
-        let white_king = Piece {
-            kind: PieceKind::King,
-            color: Color::White,
-        };
-        let white_bishop = Piece {
-            kind: PieceKind::Bishop,
-            color: Color::White,
-        };
-        let black_rook = Piece {
-            kind: PieceKind::Rook,
-            color: Color::Black,
-        };
-        let black_tokin = Piece {
-            kind: PieceKind::PromotedPawn,
-            color: Color::Black,
-        };
         let board = Board([
-            Some(white_pawn),
+            Some(WHITE_PAWN),
             None,
-            Some(white_king),
-            Some(white_bishop),
-            None,
-            None,
+            Some(WHITE_KING),
+            Some(WHITE_BISHOP),
             None,
             None,
-            Some(black_rook),
             None,
-            Some(black_tokin),
+            None,
+            Some(BLACK_ROOK),
+            None,
+            Some(BLACK_PROMOTED_PAWN),
             None,
         ]);
         let result = board.sfen();
 
         assert_eq!(result, "p1k/b2/2R/1P+1");
+    }
+
+    #[test]
+    pub fn test_empty_hand() {
+        let hand = Hand(HashMap::new());
+        let result = hand.sfen();
+
+        assert_eq!(result, "");
+    }
+
+    #[test]
+    pub fn test_hand_all_one() {
+        let hashmap = HashMap::from([
+            (HandPiece::Bishop, 1),
+            (HandPiece::Rook, 1),
+            (HandPiece::Pawn, 1),
+        ]);
+        let hand = Hand(hashmap);
+        let result = hand.sfen();
+
+        assert_eq!(result, "pbr");
+    }
+
+    #[test]
+    pub fn test_hand_all_two() {
+        let hashmap = HashMap::from([
+            (HandPiece::Bishop, 2),
+            (HandPiece::Rook, 2),
+            (HandPiece::Pawn, 2),
+        ]);
+        let hand = Hand(hashmap);
+        let result = hand.sfen();
+
+        assert_eq!(result, "p2b2r2");
+    }
+
+    #[test]
+    pub fn test_hand_mixed() {
+        let hashmap = HashMap::from([
+            (HandPiece::Bishop, 0),
+            (HandPiece::Rook, 1),
+            (HandPiece::Pawn, 2),
+        ]);
+        let hand = Hand(hashmap);
+        let result = hand.sfen();
+
+        assert_eq!(result, "p2r");
+    }
+
+    #[test]
+    pub fn test_position_starting() {
+        let board = Board([
+            Some(WHITE_ROOK),
+            Some(WHITE_KING),
+            Some(WHITE_BISHOP),
+            //-----
+            None,
+            Some(WHITE_PAWN),
+            None,
+            //-----
+            None,
+            Some(BLACK_PAWN),
+            None,
+            // ----
+            Some(BLACK_BISHOP),
+            Some(BLACK_KING),
+            Some(BLACK_ROOK),
+        ]);
+
+        let position = Position {
+            board,
+            to_play: Color::Black,
+            black_hand: Hand(HashMap::new()),
+            white_hand: Hand(HashMap::new()),
+        };
+
+        let result = position.sfen();
+
+        assert_eq!(result, "rkb/1p1/1P1/BKR b -");
+    }
+
+    #[test]
+    pub fn test_position_with_hands() {
+        let board = Board([
+            None,
+            Some(WHITE_KING),
+            None,
+            //-----
+            None,
+            None,
+            None,
+            //-----
+            None,
+            None,
+            None,
+            // ----
+            None,
+            Some(BLACK_KING),
+            Some(BLACK_ROOK),
+        ]);
+
+        let black_hashmap = HashMap::from([(HandPiece::Rook, 1), (HandPiece::Pawn, 2)]);
+        let black_hand = Hand(black_hashmap);
+
+        let white_hashmap = HashMap::from([(HandPiece::Bishop, 2)]);
+        let white_hand = Hand(white_hashmap);
+
+        let position = Position {
+            board,
+            to_play: Color::White,
+            black_hand,
+            white_hand,
+        };
+
+        let result = position.sfen();
+
+        assert_eq!(result, "1k1/3/3/1KR w P2Rb2");
     }
 }
