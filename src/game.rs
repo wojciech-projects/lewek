@@ -3,7 +3,7 @@
 /// It's not very efficient, but it encodes many invariants in the code.
 use std::collections::HashMap;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PieceKind {
     Pawn,
     Bishop,
@@ -20,13 +20,13 @@ pub enum HandPiece {
 
 pub const ALL_HAND_PIECES: [HandPiece; 3] = [HandPiece::Pawn, HandPiece::Bishop, HandPiece::Rook];
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Color {
     Black,
     White,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Piece {
     pub kind: PieceKind,
     pub color: Color,
