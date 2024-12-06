@@ -145,8 +145,9 @@ fn lex_hand(hands: &str) -> Option<Vec<HandLexerOutput>> {
 }
 
 fn parse_hands(hands: &str) -> Option<HashMap<Color, Hand>> {
-    let mut white_hand = Hand(HashMap::new());
-    let mut black_hand = Hand(HashMap::new());
+    let white_hand = Hand(HashMap::new());
+    let black_hand = Hand(HashMap::new());
+    let mut result = HashMap::from([(Color::Black, black_hand), (Color::White, white_hand)]);
 
     for token in lex_hand(hands)? {
         let HandLexerOutput {
@@ -155,22 +156,11 @@ fn parse_hands(hands: &str) -> Option<HashMap<Color, Hand>> {
             count,
         } = token;
 
-        match color {
-            Color::White => {
-                let mut entry = white_hand.0.entry(piece).or_insert(0);
-                *entry += count;
-            }
-            Color::Black => {
-                let mut entry = black_hand.0.entry(piece).or_insert(0);
-                *entry += count;
-            }
-        }
+        let inner_hashmap = result.get_mut(&color).unwrap();
+        inner_hashmap.0.insert(piece, count);
     }
 
-    Some(HashMap::from([
-        (Color::Black, black_hand),
-        (Color::White, white_hand),
-    ]))
+    Some(result)
 }
 
 #[cfg(test)]
