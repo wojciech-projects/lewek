@@ -40,6 +40,7 @@ impl IndexMut<usize> for Board {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Hand(pub HashMap<HandPiece, usize>);
 
 pub struct Position {

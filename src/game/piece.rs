@@ -15,7 +15,7 @@ pub enum HandPiece {
 
 pub const ALL_HAND_PIECES: [HandPiece; 3] = [HandPiece::Pawn, HandPiece::Bishop, HandPiece::Rook];
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Color {
     Black,
     White,
