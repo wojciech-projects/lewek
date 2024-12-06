@@ -24,6 +24,10 @@ fn parse_piece(piece: &str) -> Option<Piece> {
     }
 }
 
+fn parse_board(board: &str) -> Option<Board> {
+    Some(Board::empty())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -73,6 +77,18 @@ mod tests {
         for string in inputs {
             let result = parse_piece(string);
             assert_eq!(result, None);
+        }
+    }
+
+    #[test]
+    fn test_parse_empty_board() {
+        let input = "3/3/3/3";
+
+        let result_board = parse_board(input).unwrap();
+
+        for index in ALL_INDEXES {
+            let piece = result_board[index];
+            assert!(piece.is_none());
         }
     }
 }

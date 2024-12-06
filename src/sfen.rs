@@ -57,7 +57,7 @@ impl Sfen for Board {
             let mut line = String::new();
             let mut empty_count = 0;
             for col in 0..COLS {
-                let index = rowcol2index(row, col);
+                let index = rowcol2field(row, col);
                 if let Some(piece) = board.0[index] {
                     if empty_count > 0 {
                         line += &empty_count.to_string();
