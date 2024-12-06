@@ -110,6 +110,10 @@ struct HandLexerOutput {
 fn lex_hand(hands: &str) -> Option<Vec<HandLexerOutput>> {
     let mut result = vec![];
 
+    if hands == "-" {
+        return Some(result);
+    }
+
     let chars: Vec<char> = hands.chars().collect();
 
     let mut i = 0;
@@ -144,10 +148,14 @@ fn lex_hand(hands: &str) -> Option<Vec<HandLexerOutput>> {
     Some(result)
 }
 
-fn parse_hands(hands: &str) -> Option<HashMap<Color, Hand>> {
-    let white_hand = Hand(HashMap::new());
-    let black_hand = Hand(HashMap::new());
-    let mut result = HashMap::from([(Color::Black, black_hand), (Color::White, white_hand)]);
+struct Hands {
+    white_hand: Hand,
+    black_hand: Hand,
+}
+
+fn parse_hands(hands: &str) -> Option<Hands> {
+    let mut white_hand = Hand(HashMap::new());
+    let mut black_hand = Hand(HashMap::new());
 
     for token in lex_hand(hands)? {
         let HandLexerOutput {
@@ -156,11 +164,43 @@ fn parse_hands(hands: &str) -> Option<HashMap<Color, Hand>> {
             count,
         } = token;
 
-        let inner_hashmap = result.get_mut(&color).unwrap();
-        inner_hashmap.0.insert(piece, count);
+        match color {
+            Color::White => {
+                white_hand.0.insert(piece, count);
+            }
+            Color::Black => {
+                black_hand.0.insert(piece, count);
+            }
+        }
     }
 
-    Some(result)
+    Some(Hands {
+        white_hand,
+        black_hand,
+    })
+}
+
+fn parse_sfen(sfen: &str) -> Option<Position> {
+    let parts: Vec<&str> = sfen.split_ascii_whitespace().collect();
+    if parts.len() != 3 {
+        return None;
+    }
+
+    let board = parse_board(parts[0])?;
+
+    let to_play = parse_color(parts[1])?;
+
+    let Hands {
+        white_hand,
+        black_hand,
+    } = parse_hands(parts[2])?;
+
+    Some(Position {
+        board,
+        to_play,
+        black_hand,
+        white_hand,
+    })
 }
 
 #[cfg(test)]
@@ -413,22 +453,25 @@ mod tests {
 
     #[test]
     fn test_parse_hands_empty() {
-        let input = "";
+        let input = "-";
 
-        let result = parse_hands(input).unwrap();
+        let Hands {
+            white_hand,
+            black_hand,
+        } = parse_hands(input).unwrap();
 
-        assert_eq!(result.get(&Color::Black).unwrap(), &Hand(HashMap::new()));
-        assert_eq!(result.get(&Color::White).unwrap(), &Hand(HashMap::new()));
+        assert_eq!(white_hand, Hand(HashMap::new()));
+        assert_eq!(black_hand, Hand(HashMap::new()));
     }
 
     #[test]
     fn test_parse_hands_full() {
         let input = "pr2PB2";
 
-        let result = parse_hands(input).unwrap();
-
-        let black_hand = result.get(&Color::Black).unwrap();
-        let white_hand = result.get(&Color::White).unwrap();
+        let Hands {
+            white_hand,
+            black_hand,
+        } = parse_hands(input).unwrap();
 
         assert_eq!(white_hand.0.get(&HandPiece::Pawn), Some(&1));
         assert_eq!(white_hand.0.get(&HandPiece::Bishop), None);
@@ -437,5 +480,28 @@ mod tests {
         assert_eq!(black_hand.0.get(&HandPiece::Pawn), Some(&1));
         assert_eq!(black_hand.0.get(&HandPiece::Bishop), Some(&2));
         assert_eq!(black_hand.0.get(&HandPiece::Rook), None);
+    }
+
+    #[test]
+    fn test_parse_position_errors() {
+        let wrong_board = "$$$ b -";
+        let wrong_color = "3/3/3/3 z -";
+        let wrong_hand_pieces = "3/3/3/3 b x";
+
+        let wrong_inputs = [wrong_board, wrong_color, wrong_hand_pieces];
+
+        for input in wrong_inputs {
+            let result = parse_sfen(input);
+            assert!(result.is_none());
+        }
+    }
+
+    #[test]
+    fn test_parse_sfen_ok() {
+        let input = "rkb/1p1/1P1/BKR b -";
+
+        let result = parse_sfen(input);
+
+        assert!(result.is_some());
     }
 }
